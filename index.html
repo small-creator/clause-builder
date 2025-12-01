@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 특약 작성기</title>
+
+    <!-- Vercel Analytics -->
+    <script defer src="/_vercel/insights/script.js"></script>
+
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/sun-typeface/SUIT/fonts/variable/woff2/SUIT-Variable.css" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        * { font-family: 'SUIT Variable', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        
+        body { background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); min-height: 100vh; color: #1f2937; line-height: 1.5; }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+        .flex { display: flex; }
+        .flex-wrap { flex-wrap: wrap; }
+        .items-center { align-items: center; }
+        .items-start { align-items: flex-start; }
+        .justify-between { justify-content: space-between; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-3 { gap: 0.75rem; }
+        
+        /* Header */
+        .header {
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Tab styles */
+        .tab-container {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            background: white;
+            color: #6b7280;
+        }
+        .tab-btn:hover { background: #f3f4f6; }
+        .tab-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        .tab-btn.active-sale {
+            background: #059669;
+            color: white;
+            border-color: #059669;
+        }
+        .tab-btn.active-rent {
+            background: #7c3aed;
+            color: white;
+            border-color: #7c3aed;
+        }
+        .tab-btn .count {
+            display: inline-block;
+            margin-left: 0.5rem;
+            padding: 0.125rem 0.5rem;
+            background: rgba(255,255,255,0.3);
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+        
+        /* Grid layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 380px;
+            gap: 1.5rem;
+            padding: 1.5rem 0;
+        }
+        @media (max-width: 1024px) {
+            .main-grid { grid-template-columns: 1fr; }
+        }
+        
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            padding: 1.25rem;
+        }
+        
+        /* Category toggle */
+        .category-group {
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: white;
+        }
+        .category-header {
+            width: 100%;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to right, #f9fafb, white);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            text-align: left;
+        }
+        .category-header:hover { background: linear-gradient(to right, #f3f4f6, #f9fafb); }
+        .category-icon {
+            font-size: 1.25rem;
+            margin-right: 0.75rem;
+        }
+        .category-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: #1f2937;
+        }
+        .category-count {
+            background: #f3f4f6;
+            color: #6b7280;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            margin-left: 0.75rem;
+        }
+        .category-selected {
+            background: #3b82f6;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        .arrow {
+            color: #9ca3af;
+            transition: transform 0.2s;
+            font-size: 0.75rem;
+        }
+        .arrow.open { transform: rotate(90deg); }
+        
+        /* Clause item */
+        .clause-list {
+            border-top: 1px solid #f3f4f6;
+            background: #fafafa;
+        }
+        .clause-item {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: all 0.15s;
+            border-left: 3px solid transparent;
+        }
+        .clause-item:last-child { border-bottom: none; }
+        .clause-item:hover { background: #f3f4f6; }
+        .clause-item.selected {
+            background: #eff6ff;
+            border-left-color: #3b82f6;
+        }
+        .clause-checkbox {
+            width: 1.25rem;
+            height: 1.25rem;
+            margin-right: 0.75rem;
+            margin-top: 0.125rem;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+        .clause-content { flex: 1; min-width: 0; }
+        .clause-badges {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: inline-block;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .badge-gray { background: #dbeafe; color: #1e40af; }
+        .clause-title {
+            font-weight: 500;
+            color: #1f2937;
+            margin-bottom: 0.25rem;
+            font-size: 0.9375rem;
+        }
+        .clause-text {
+            font-size: 0.875rem;
+            color: #4b5563;
+            line-height: 1.6;
+            word-break: keep-all;
+        }
+        
+        /* Selected panel */
+        .selected-panel {
+            position: sticky;
+            top: 140px;
+        }
+        .selected-list {
+            max-height: calc(100vh - 400px);
+            overflow-y: auto;
+            margin-bottom: 1rem;
+        }
+        .selected-item {
+            background: #f9fafb;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #e5e7eb;
+            position: relative;
+        }
+        .selected-item:hover .delete-btn { opacity: 1; }
+        .delete-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            width: 1.5rem;
+            height: 1.5rem;
+            border-radius: 50%;
+            background: #e5e7eb;
+            border: none;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        .delete-btn:hover { background: #fee2e2; color: #ef4444; }
+        .selected-num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            background: #3b82f6;
+            color: white;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        .selected-text {
+            font-size: 0.8125rem;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+        
+        /* Copy button */
+        .copy-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            font-weight: 700;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+        }
+        .copy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -1px rgba(59, 130, 246, 0.4);
+        }
+        .copy-btn:disabled {
+            background: #d1d5db;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        /* Preview */
+        .preview-box {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background: #f3f4f6;
+            border-radius: 0.5rem;
+        }
+        .preview-content {
+            font-size: 0.75rem;
+            color: #4b5563;
+            max-height: 120px;
+            overflow-y: auto;
+            background: white;
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            font-family: ui-monospace, monospace;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        /* Search */
+        .search-box {
+            position: relative;
+            margin-top: 1rem;
+        }
+        .search-input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .search-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.875rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        .search-clear {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+        .search-clear:hover { color: #6b7280; }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1f2937;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: slideUp 0.3s ease-out;
+            z-index: 100;
+        }
+        @keyframes slideUp {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
+        
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #9ca3af;
+        }
+        .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        
+        /* Footer */
+        .footer {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+        .footer-sub { font-size: 0.75rem; color: #9ca3af; margin-top: 0.25rem; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+
+        // 특약 데이터 (전체 123개 - A→B→C 등급순 정렬)
+        const clauseData = [
+            {"id": 14, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "현상태", "grade": "A", "situation": "현상태 인지", "title": "현상태 - 현상태 인지", "content": "계약의 당사자는 계약의 목적물을 확인하고, 육안으로 확인한 현 시설상태로 계약을 체결한다."},
+            {"id": 214, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "현상태", "grade": "A", "situation": "현상태 인지", "title": "현상태 - 현상태 인지", "content": "계약의 당사자는 계약의 목적물을 확인하고, 육안으로 확인한 현 시설상태로 계약을 체결한다."},
+            {"id": 43, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "리모델링", "grade": "A", "situation": "리모델링 금액협의", "title": "리모델링 - 리모델링 금액협의", "content": "기본 시설물 외 설치한 옵션(붙박이장, 샹들리에, 도어록, 비데 등)은 매매대금에 포함한다."},
+            {"id": 65, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "인테리어", "grade": "A", "situation": "매수인 부담", "title": "인테리어 - 매수인 부담", "content": "중도금을 지급하고 매도인은 매수인의 인테리어공사에 협조하기로 하며 관리비는 매수인이 부담하기로 한다."},
+            {"id": 85, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "수리", "grade": "A", "situation": "임대인 임차인 협의", "title": "수리 - 임대인 임차인 협의", "content": "임차인은 상기물건의 하자보수처리 등을 적극적으로 협조하기로 한다."},
+            {"id": 92, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "원상복구", "grade": "A", "situation": "시설 원상복구", "title": "원상복구 - 시설 원상복구", "content": "현 시설 상태에서의 매매(임대) 계약이며, 원상복구 시 현 상태를 기준으로한다."},
+            {"id": 15, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "수리", "grade": "B", "situation": "조건부 임대인수리", "title": "수리 - 조건부 임대인수리", "content": "본 계약은 현시설물 상태로 계약을 체결하되, 계약시에 매도(임대)인이 고지하지 않은 부분에 하자가 있을 경우, 하자담보책임과는 별개로 매도(임대)인은 이를 수리해주기로 한다."},
+            {"id": 215, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "수리", "grade": "B", "situation": "조건부 임대인수리", "title": "수리 - 조건부 임대인수리", "content": "본 계약은 현시설물 상태로 계약을 체결하되, 계약시에 매도(임대)인이 고지하지 않은 부분에 하자가 있을 경우, 하자담보책임과는 별개로 매도(임대)인은 이를 수리해주기로 한다."},
+            {"id": 44, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "면적", "grade": "B", "situation": "매수인 책임", "title": "면적 - 매수인 책임", "content": "대지, 건물면적은 권리면적(공부상)기준으로 한 매매이며, 향후 실측면적과 차이가 있더라도 매수인 및 매도인은 일체의 이의를 제기하지 않기로 한다."},
+            {"id": 60, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "수리", "grade": "B", "situation": "매도인수리", "title": "수리 - 매도인수리", "content": "본 계약의 목적물에 중대한 하자가 있을 경우, 민법 제580조(매도인의 하자담보책임) 및 575조(제한물권있는 경우와 매도인의 담보책임) 제1항에 의거 매매 후 6개월 내에 발생하는 중대한 하자부분은 매도인이 책임진다."},
+            {"id": 61, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "수리", "grade": "B", "situation": "매수인수리", "title": "수리 - 매수인수리", "content": "매수인은 건물에 대한 하자부분에 대해서 하자 보증서대로 이행하기로 하며, 추후, 이를 문제로 매도인에게 이의를 제기하지 않는다."},
+            {"id": 74, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "현상태", "grade": "B", "situation": "현상태 인지", "title": "현상태 - 현상태 인지", "content": "본 계약은 현 시설상태로 매매하고, 특약에서 별도로 정한 내용을 제외하고 시설물 일체를 잔금일에 명도하기로 한다."},
+            {"id": 80, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "리모델링", "grade": "B", "situation": "리모델링 철거협의", "title": "리모델링 - 리모델링 철거협의", "content": "임대인은 잔금시까지 00을 (철거,수리)하기로 한다."},
+            {"id": 81, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "리모델링", "grade": "B", "situation": "리모델링 철거협의", "title": "리모델링 - 리모델링 철거협의", "content": "임대인은 임차인의 00설치에 동의한다. 00은 계약 만료 시 임차인이 책임지고 원상복구한다."},
+            {"id": 93, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "원상복구", "grade": "B", "situation": "시설 원상복구", "title": "원상복구 - 시설 원상복구", "content": "임차인은 자기부담으로 도배, 장판 등을 공사 한 경우, 원상복구 하지 않아도 된다."},
+            {"id": 94, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "원상복구", "grade": "B", "situation": "옵션 원상복구", "title": "원상복구 - 옵션 원상복구", "content": "임차인은 기본 시설물 및 옵션(신발장,안방붙박이장,에어컨3대,아일랜드식타,화장대,마스터키3ea,에어컨리모컨3ea) 을 파손 및 분실할 경우 원상복구해야 한다."},
+            {"id": 17, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "위반건축물", "grade": "C", "situation": "매도인 부담", "title": "위반건축물 - 매도인 부담", "content": "매도(임대)인은 본 계약의 목적물의 건축물대장상 위반건축물 관련 사항을 (계약, 중도, 잔)금 지급 시까지 원상복구 시키기로 한다."},
+            {"id": 217, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "위반건축물", "grade": "C", "situation": "매도인 부담", "title": "위반건축물 - 매도인 부담", "content": "매도(임대)인은 본 계약의 목적물의 건축물대장상 위반건축물 관련 사항을 (계약, 중도, 잔)금 지급 시까지 원상복구 시키기로 한다."},
+            {"id": 45, "contractType": "매매", "mainCategory": "매물상태", "subCategory": "무허가건축물", "grade": "C", "situation": "비용부담 매도인/매수인", "title": "무허가건축물 - 비용부담 매도인/매수인", "content": "본 매매건물은 무허가 건물로서 해당관청 무허가 건물대장에 등재되어 있음을 확인하고 계약하며, 건축물 점유에 따른 부과비용등은 해당잔금일을 기준으로 정산한다."},
+            {"id": 1, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "개인정보", "grade": "A", "situation": "동의", "title": "개인정보 - 동의", "content": "계약당사자 및 이해관계인은 개인정보수집 및 이용활용에 동의한다."},
+            {"id": 201, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "개인정보", "grade": "A", "situation": "동의", "title": "개인정보 - 동의", "content": "계약당사자 및 이해관계인은 개인정보수집 및 이용활용에 동의한다."},
+            {"id": 2, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "A", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "본 계약은 양 당사자가 위 특약사항과 확인 설명서를 읽고 확인 후 계약서에 서명날인한다."},
+            {"id": 202, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "A", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "본 계약은 양 당사자가 위 특약사항과 확인 설명서를 읽고 확인 후 계약서에 서명날인한다."},
+            {"id": 16, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "A", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "본 매매(임대)계약은 양 당사자가 토지이용계획확인서, 등기사항전부증명서, 건축물관리대장을 확인하고 계약서에 서명날인 한다."},
+            {"id": 216, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "A", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "본 매매(임대)계약은 양 당사자가 토지이용계획확인서, 등기사항전부증명서, 건축물관리대장을 확인하고 계약서에 서명날인 한다."},
+            {"id": 24, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "관례", "grade": "A", "situation": "부동산 관례", "title": "관례 - 부동산 관례", "content": "본 특약사항에 기재되지 않은 사항은 민법상 계약에 관한 규정과 부동산매매(임대) 일반 관례에 따른다."},
+            {"id": 224, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "관례", "grade": "A", "situation": "부동산 관례", "title": "관례 - 부동산 관례", "content": "본 특약사항에 기재되지 않은 사항은 민법상 계약에 관한 규정과 부동산매매(임대) 일반 관례에 따른다."},
+            {"id": 30, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "A", "situation": "대리계약 기본", "title": "대리계약 - 대리계약 기본", "content": "본 계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결한다."},
+            {"id": 230, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "A", "situation": "대리계약 기본", "title": "대리계약 - 대리계약 기본", "content": "본 계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결한다."},
+            {"id": 32, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "A", "situation": "위임장 첨부", "title": "대리계약 - 위임장 첨부", "content": "본 계약은 대리인'000'이 소유자'000'의 인감증명서, 인감도장, 위임장을 첨부하여 대리계약을 체결한다."},
+            {"id": 232, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "A", "situation": "위임장 첨부", "title": "대리계약 - 위임장 첨부", "content": "본 계약은 대리인'000'이 소유자'000'의 인감증명서, 인감도장, 위임장을 첨부하여 대리계약을 체결한다."},
+            {"id": 5, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "개인정보", "grade": "B", "situation": "기간", "title": "개인정보 - 기간", "content": "개인정보는 부동산계약 미체결 시 즉시파기하기로 하며, 부동산 계약 체결 시 잔금일로부터 5년(확인설명서 보유기간)으로 한다."},
+            {"id": 205, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "개인정보", "grade": "B", "situation": "기간", "title": "개인정보 - 기간", "content": "개인정보는 부동산계약 미체결 시 즉시파기하기로 하며, 부동산 계약 체결 시 잔금일로부터 5년(확인설명서 보유기간)으로 한다."},
+            {"id": 20, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "B", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "매수(임차)인은 (건축물대장, 등기사항증명서)에 000의 하자가 있음을 확인하였으며, 추후, 이에 대하여 이의를 제기하지 않는다."},
+            {"id": 220, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "B", "situation": "서류에 대한 설명", "title": "확인설명 - 서류에 대한 설명", "content": "매수(임차)인은 (건축물대장, 등기사항증명서)에 000의 하자가 있음을 확인하였으며, 추후, 이에 대하여 이의를 제기하지 않는다."},
+            {"id": 33, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "B", "situation": "공유자 계약", "title": "대리계약 - 공유자 계약", "content": "본 계약은 공동소유자 물건으로 위임장을 첨부한 1/2 소유자인 '갑'과 계약하며, 1/2소유권자 '을'의 승낙 하에 계약한다.  (계약, 중도, 잔)금은 1/2씩 공동소유권자 계좌로 입금한다."},
+            {"id": 233, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "B", "situation": "공유자 계약", "title": "대리계약 - 공유자 계약", "content": "본 계약은 공동소유자 물건으로 위임장을 첨부한 1/2 소유자인 '갑'과 계약하며, 1/2소유권자 '을'의 승낙 하에 계약한다.  (계약, 중도, 잔)금은 1/2씩 공동소유권자 계좌로 입금한다."},
+            {"id": 34, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "B", "situation": "전화확인", "title": "대리계약 - 전화확인", "content": "본계약은 소유자'000'과 전화 통화 후, 대리인'000'과 계약을 체결하되, 계약금은 소유자'000'의 00은행00계좌로 입금하기로 한다."},
+            {"id": 234, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "B", "situation": "전화확인", "title": "대리계약 - 전화확인", "content": "본계약은 소유자'000'과 전화 통화 후, 대리인'000'과 계약을 체결하되, 계약금은 소유자'000'의 00은행00계좌로 입금하기로 한다."},
+            {"id": 79, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "B", "situation": "공유자 계약", "title": "대리계약 - 공유자 계약", "content": "본 계약은 공동소유자 물건이며, 공유지분의 과반이상을 소유한 '갑'과 임대차계약을 체결한다. 단, 타 공유지분자들이 이의를 제기할 경우, 모든책임은 소유자 '갑'에게 있다."},
+            {"id": 121, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "B", "situation": "하자에 대한 설명", "title": "확인설명 - 하자에 대한 설명", "content": "계약 목적물 00의 하자가 있음을 임차인은 인지하고 계약을 체결한다."},
+            {"id": 35, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "공인중개사 보관", "title": "대리계약 - 공인중개사 보관", "content": "본계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결하되, 소유자'000'이 추인할 때까지 계약금은 공인중개사법 제31조(계약금등의 반환채무이행의 보장)에 따라 공인중개사가 보관한다."},
+            {"id": 235, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "공인중개사 보관", "title": "대리계약 - 공인중개사 보관", "content": "본계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결하되, 소유자'000'이 추인할 때까지 계약금은 공인중개사법 제31조(계약금등의 반환채무이행의 보장)에 따라 공인중개사가 보관한다."},
+            {"id": 36, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "공인중개사 보관", "title": "대리계약 - 공인중개사 보관", "content": "본 계약은 소유자를 대리하여 대리인이 계약을 체결하고, 거래의 안전을 보장하기 위하여 공인중개사가 공인중개사법 제 31조(계약금등의 반호나채무이행의 보장)에 따라 (계약, 중도, 잔)금을 보관하기로 하고, 공인중개사는 이에따른 관계증서를 제공하기로 한다."},
+            {"id": 236, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "공인중개사 보관", "title": "대리계약 - 공인중개사 보관", "content": "본 계약은 소유자를 대리하여 대리인이 계약을 체결하고, 거래의 안전을 보장하기 위하여 공인중개사가 공인중개사법 제 31조(계약금등의 반호나채무이행의 보장)에 따라 (계약, 중도, 잔)금을 보관하기로 하고, 공인중개사는 이에따른 관계증서를 제공하기로 한다."},
+            {"id": 38, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "추인", "title": "대리계약 - 추인", "content": "본 계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결하되, 매수(임차)인은 대리인이 소유자의 추인 또는 대리계약의 일체 서류를 추완할 때 계약금을 입금하기로 한다."},
+            {"id": 238, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "대리계약", "grade": "C", "situation": "추인", "title": "대리계약 - 추인", "content": "본 계약은 대리인'000'이 소유자'000'을 대리하여 계약을 체결하되, 매수(임차)인은 대리인이 소유자의 추인 또는 대리계약의 일체 서류를 추완할 때 계약금을 입금하기로 한다."},
+            {"id": 75, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "확인설명", "grade": "C", "situation": "주변에 대한 설명", "title": "확인설명 - 주변에 대한 설명", "content": "매수인은 본 계약의 목적물이 00재개발(주거환경재선사업)구역에 위치하여 있음을 인지하고 향후 일정 및 변경사항을 충분히 확인하고 계약을 체결한다."},
+            {"id": 9, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "계약금", "grade": "A", "situation": "계좌이체", "title": "계약금 - 계좌이체", "content": "계약금 00원은 00월00일에 00은행 00계좌로 입금하기로 한다."},
+            {"id": 209, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "계약금", "grade": "A", "situation": "계좌이체", "title": "계약금 - 계좌이체", "content": "계약금 00원은 00월00일에 00은행 00계좌로 입금하기로 한다."},
+            {"id": 18, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "관리비", "grade": "A", "situation": "선수관리비", "title": "관리비 - 선수관리비", "content": "잔금일 기준 선수관리비는 매도자에게 반환하고, 매도자는 현 임대차 기간의 장기수선충당 유지금을 현 임차인에게 반환하기로 한다."},
+            {"id": 26, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "국세 및 지방세", "grade": "A", "situation": "잔금일 기준", "title": "국세 및 지방세 - 잔금일 기준", "content": "각종 조세 및 공과금은 잔금지급일 기준으로 한다."},
+            {"id": 226, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "국세 및 지방세", "grade": "A", "situation": "잔금일 기준", "title": "국세 및 지방세 - 잔금일 기준", "content": "각종 조세 및 공과금은 잔금지급일 기준으로 한다."},
+            {"id": 29, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "위약금", "grade": "A", "situation": "위약금 약정", "title": "위약금 - 위약금 약정", "content": "위약금은 계약금으로 한다."},
+            {"id": 229, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "위약금", "grade": "A", "situation": "위약금 약정", "title": "위약금 - 위약금 약정", "content": "위약금은 계약금으로 한다."},
+            {"id": 95, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "월차임", "grade": "A", "situation": "선불/후불", "title": "월차임 - 선불/후불", "content": "월차임 00원정은 매월 00일 00계좌에 선(후)불로 입금하기로 한다."},
+            {"id": 116, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "중개보수", "grade": "A", "situation": "중개보수 협의", "title": "중개보수 - 중개보수 협의", "content": "임차인은 계약만료전 퇴거시 새로운 임차인이 입주 전까지 관리비와 부동산중개수수료는 임차인이 부담하기로 한다."},
+            {"id": 11, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "분할지급", "grade": "B", "situation": "소유자 분할지급", "title": "분할지급 - 소유자 분할지급", "content": "본 계약의 목적물은 소유자가 00명이므로 (계약, 중도, 잔)금 10원 중 5원은 '갑'에게 입급하고, 5원은 '을'에게 입금한다."},
+            {"id": 211, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "분할지급", "grade": "B", "situation": "소유자 분할지급", "title": "분할지급 - 소유자 분할지급", "content": "본 계약의 목적물은 소유자가 00명이므로 (계약, 중도, 잔)금 10원 중 5원은 '갑'에게 입급하고, 5원은 '을'에게 입금한다."},
+            {"id": 13, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "분할지급", "grade": "B", "situation": "시기 분할지급", "title": "분할지급 - 시기 분할지급", "content": "(계약, 중도, 잔)금 10원 중 5원은 10월 5일에 입금하고 나머지 5원은 10월 10일에 입금한다."},
+            {"id": 213, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "분할지급", "grade": "B", "situation": "시기 분할지급", "title": "분할지급 - 시기 분할지급", "content": "(계약, 중도, 잔)금 10원 중 5원은 10월 5일에 입금하고 나머지 5원은 10월 10일에 입금한다."},
+            {"id": 21, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "국세 및 지방세", "grade": "B", "situation": "잔금일 기준", "title": "국세 및 지방세 - 잔금일 기준", "content": "매도자는 잔금 시, 제세공과금 완납증명서를 매수자에게 제출하기로 한다."},
+            {"id": 25, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "위약금", "grade": "B", "situation": "위약금 약정", "title": "위약금 - 위약금 약정", "content": "위약금은 기지급한 계약금으로 한다."},
+            {"id": 225, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "위약금", "grade": "B", "situation": "위약금 약정", "title": "위약금 - 위약금 약정", "content": "위약금은 기지급한 계약금으로 한다."},
+            {"id": 96, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "유익비", "grade": "B", "situation": "유익비 보장", "title": "유익비 - 유익비 보장", "content": "임대인은 임차인이 유익비를 지출한 경우, 그 가액의 증가가 임대차 종료시에 현존한다면 지출한 금액이나 그 증가액을 상환하기로 한다."},
+            {"id": 120, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "필요비", "grade": "B", "situation": "필요비 청구 가능/ 불가능", "title": "필요비 - 필요비 청구 가능/ 불가능", "content": "임차인은 필요비로 지출한 비용을 임대차기간 내 청구할 수 있다."},
+            {"id": 10, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "계약금", "grade": "C", "situation": "계좌이체", "title": "계약금 - 계좌이체", "content": "계약금 00원은 매수(임차)인이 00월00일 00은행 00계좌로 입금한 금액으로 갈음한다."},
+            {"id": 210, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "계약금", "grade": "C", "situation": "계좌이체", "title": "계약금 - 계좌이체", "content": "계약금 00원은 매수(임차)인이 00월00일 00은행 00계좌로 입금한 금액으로 갈음한다."},
+            {"id": 27, "contractType": "매매", "mainCategory": "금액정산", "subCategory": "국세 및 지방세", "grade": "C", "situation": "매수자부담", "title": "국세 및 지방세 - 매수자부담", "content": "양도소득세는 매수(매도)자가 부담한다."},
+            {"id": 77, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "관리비", "grade": "C", "situation": "관리비규정", "title": "관리비 - 관리비규정", "content": "관리비는 00아파트 자체 관리비 규정에 따른다."},
+            {"id": 84, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "분할지급", "grade": "C", "situation": "소유자 분할지급", "title": "분할지급 - 소유자 분할지급", "content": "본 계약의 목적물은 소유자가 00명이므로 보증금은 '갑'에게 입금하고, 월차임은 '을'에게 입금하기로 한다."},
+            {"id": 97, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "유익비", "grade": "C", "situation": "유익비 미보장", "title": "유익비 - 유익비 미보장", "content": "임차인은 임대차계약 만료 시, 원상복구를 하기로 하며 이는 임차인의 유익비상환청구권을 포기하기로 한 것으로 본다."},
+            {"id": 98, "contractType": "임대", "mainCategory": "금액정산", "subCategory": "유익비", "grade": "C", "situation": "유익비 보장", "title": "유익비 - 유익비 보장", "content": "임차인은 건물 보존을 위해 꼭 필요하지는 않지만, 가치 증가를 위해 비용을 지출한 경우, 그 비용은 임대차 종료시에청구하기로 한다."},
+            {"id": 19, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매도(임대)인은 본 계약의 목적물의 등기사항전부증명서상 을구의 권리(근저당권, 전세권, 임차권, 지상권 등)를 (계약, 중도, 잔)금 지급 시까지 말소 시키기로 한다."},
+            {"id": 219, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매도(임대)인은 본 계약의 목적물의 등기사항전부증명서상 을구의 권리(근저당권, 전세권, 임차권, 지상권 등)를 (계약, 중도, 잔)금 지급 시까지 말소 시키기로 한다."},
+            {"id": 28, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매수(임차)인은 등기전부증명서상 00은행 채권최고액 00원정이 설정되어 있음을 인지하고 계약을 체결한다. 중도금 지급 시 은행에 동행하여 상환 말소하기로 한다."},
+            {"id": 228, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매수(임차)인은 등기전부증명서상 00은행 채권최고액 00원정이 설정되어 있음을 인지하고 계약을 체결한다. 중도금 지급 시 은행에 동행하여 상환 말소하기로 한다."},
+            {"id": 39, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매수(임차)인은 등기전부증명서상 00은행 채권최고액 00원정이 설정되어 있음을 인지하고 계약을 체결한다. 잔금 지급 시 은행에 동행하여 상환 말소하기로 한다."},
+            {"id": 239, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매수(임차)인은 등기전부증명서상 00은행 채권최고액 00원정이 설정되어 있음을 인지하고 계약을 체결한다. 잔금 지급 시 은행에 동행하여 상환 말소하기로 한다."},
+            {"id": 40, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매도(임대)인은 본 계약의 목적물의 등기사항전부증명서상 갑구의 권리(압류,가압류,가등기,가처분 등)를 (계약, 중도, 잔)금 지급 시까지 말소 시키기로 한다."},
+            {"id": 240, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "매도(임대)인은 본 계약의 목적물의 등기사항전부증명서상 갑구의 권리(압류,가압류,가등기,가처분 등)를 (계약, 중도, 잔)금 지급 시까지 말소 시키기로 한다."},
+            {"id": 70, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "말소안함", "title": "채권 - 말소안함", "content": "본 계약 목적물은 계약 체결 시, 근저당권이 설정되어 있지 않은 상태이며 매도(임대)인은 잔금일까지 현상태를 유지하기로 한다."},
+            {"id": 78, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "권리관계", "grade": "A", "situation": "기타", "title": "권리관계 - 기본", "content": "임대인은 매매나 담보제공을 할 경우에는 사전에 임차인에게 통보해주기로 한다."},
+            {"id": 104, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "전세권", "grade": "A", "situation": "신규계약", "title": "전세권 - 신규계약", "content": "임대인은 임차인의 전세권설정에 동의하며 필요한 서류를 임차인에게 제공해주기로 한다. 전세권설정 및 말소에 필요한 제반 비용은 임차인이 부담하기로 한다."},
+            {"id": 105, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "전세권", "grade": "A", "situation": "신규계약", "title": "전세권 - 신규계약", "content": "임대인은 임차인의 전세권설정에 동의하며 임차인은 전세권을 양도하거나 임대하지 않기로 한다."},
+            {"id": 106, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "전세자금대출", "grade": "A", "situation": "대출", "title": "전세자금대출 - 대출", "content": "본 계약은 임차인의 전세자금 대출 실행이 안될 경우, 위약금없이 해약하기로 한다."},
+            {"id": 107, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "전세자금대출", "grade": "A", "situation": "대출", "title": "전세자금대출 - 대출", "content": "임차인의 책임 없는 사유로 전세자금 대출이 실행되지 않을 시 이 계약은 조건 없이 해제 하기로 하며 임대인은 수령한 계약금을 즉각 반환한다."},
+            {"id": 108, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "전세자금대출", "grade": "A", "situation": "대출", "title": "전세자금대출 - 대출", "content": "매도인은 매수인의 잔금을 위한 대출, 전세입자의 전세자금대출에 적극협조 하기로 하며, 비협조로 잔금이 실행되지 못하면 매도인의 책임 있는 사유로 계약은 해제하기로 한다."},
+            {"id": 117, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "일부/전부말소", "title": "채권 - 일부/전부말소", "content": "임대인은 잔금 시에 대출금 일부/전부를 양 당사자가 은행에 동행하여 상환하기로 한다."},
+            {"id": 118, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "임대인은 잔금일까지 소유권 외 영향을 줄수 있는 (전세권, 임차권, 지상권, 근저당권 등)을 말소시키기로 한다."},
+            {"id": 122, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "A", "situation": "전부말소", "title": "채권 - 전부말소", "content": "본 계약은 중도금을 생략하고 등기사항전부증명서상 담보물권 등을 잔금일 기준으로 정산하기로 한다."},
+            {"id": 37, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "B", "situation": "수탁자 확인", "title": "신탁 - 수탁자 확인", "content": "위탁자는 수탁자의 허가를 받지못하여 본 계약이 해지될 경우, 이에따른 손해에 대하여 배상하기로 한다"},
+            {"id": 237, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "B", "situation": "수탁자 확인", "title": "신탁 - 수탁자 확인", "content": "위탁자는 수탁자의 허가를 받지못하여 본 계약이 해지될 경우, 이에따른 손해에 대하여 배상하기로 한다"},
+            {"id": 71, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "B", "situation": "말소안함", "title": "채권 - 말소안함", "content": "계약체결일 이후 소유권에 대한 제한사유(가압류, 가처분 등)가 발생하면 본 계약은 무효로 하고 매도(임대)인은 매수(임차)인에게 계약금의 배액을 위약금으로 배상하기로 한다."},
+            {"id": 72, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "B", "situation": "전부말소", "title": "채권 - 전부말소", "content": "가압류말소와 잔금지급은 동시이행하기로 한다. 말소서류는 매수인이 선정한 법무사에게 제공하기로 한다."},
+            {"id": 73, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "채권", "grade": "B", "situation": "전부말소", "title": "채권 - 전부말소", "content": "본 물건의 등기사항 전부증명서에 설정된 개인채무 권리자 박00는 본 매매계약 시 소유권자와 동행참석해 말소수임 법무사에 맡겨 정리하기로 위임한다."},
+            {"id": 91, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "B", "situation": "수탁자/위탁자 입금", "title": "신탁 - 수탁자/위탁자 입금", "content": "본 계약의 목적물은 담보신탁에 해당하므로, 보증금은 (수탁자, 위탁자)에게 입금하고, 월세는 (수탁자, 위탁자)에게 입금하기로 한다."},
+            {"id": 7, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "경매", "grade": "C", "situation": "매도인 책임", "title": "경매 - 매도인 책임", "content": "본 계약의 목적물은 경매가 진행되고 있으나, 매도(임대)인은 00월00일까지 경매의 원인을 제거하여 매수(임차)인이 사용수익하는데 문제없도록 책임진다."},
+            {"id": 207, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "경매", "grade": "C", "situation": "매도인 책임", "title": "경매 - 매도인 책임", "content": "본 계약의 목적물은 경매가 진행되고 있으나, 매도(임대)인은 00월00일까지 경매의 원인을 제거하여 매수(임차)인이 사용수익하는데 문제없도록 책임진다."},
+            {"id": 8, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "경매", "grade": "C", "situation": "매수인 책임", "title": "경매 - 매수인 책임", "content": "본 계약의 목적물은 경매가 진행되고 있으므로 매수(임차)인은 이에 따른 상태를 명확하게 확인하고, 추후, 경매진행 결과에 따라 강제집행 당할 수 있음을 인지하고 계약을 체결한다."},
+            {"id": 208, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "경매", "grade": "C", "situation": "매수인 책임", "title": "경매 - 매수인 책임", "content": "본 계약의 목적물은 경매가 진행되고 있으므로 매수(임차)인은 이에 따른 상태를 명확하게 확인하고, 추후, 경매진행 결과에 따라 강제집행 당할 수 있음을 인지하고 계약을 체결한다."},
+            {"id": 12, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "수탁자 확인", "title": "신탁 - 수탁자 확인", "content": "본 계약의 목적물은 담보신탁에 해당하므로 위탁자는 (계약,중도,잔)금일 까지 수탁자의 계약의 허락을 받아 주기로 한다."},
+            {"id": 212, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "수탁자 확인", "title": "신탁 - 수탁자 확인", "content": "본 계약의 목적물은 담보신탁에 해당하므로 위탁자는 (계약,중도,잔)금일 까지 수탁자의 계약의 허락을 받아 주기로 한다."},
+            {"id": 22, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "신탁확인", "title": "신탁 - 신탁확인", "content": "계약의 당사자는 본 계약의 목적물이 (관리, 처분, 담보)신탁 중 00신탁에 해당함을 인지하고 계약을 체결한다."},
+            {"id": 222, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "신탁확인", "title": "신탁 - 신탁확인", "content": "계약의 당사자는 본 계약의 목적물이 (관리, 처분, 담보)신탁 중 00신탁에 해당함을 인지하고 계약을 체결한다."},
+            {"id": 41, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "신탁원부", "title": "신탁 - 신탁원부", "content": "계약의 당사자는 본 계약 체결 시, 중개사가 설명한 신탁원부를 확인하고 계약을 체결한다."},
+            {"id": 241, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "신탁원부", "title": "신탁 - 신탁원부", "content": "계약의 당사자는 본 계약 체결 시, 중개사가 설명한 신탁원부를 확인하고 계약을 체결한다."},
+            {"id": 42, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "대출", "grade": "C", "situation": "매수인 부담", "title": "대출 - 매수인 부담", "content": "매수인은 대출금을 중도금 지급전까지 말소와 승계를 결정하여 매도인에게 통보한다. 단, 대출금액의 가감 및 승계 적격여부는 매수인 책임이며 대출말소비용은 매도인이 부담하고 대출승계비용은 매수인이 부담한다."},
+            {"id": 63, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "신탁", "grade": "C", "situation": "수탁자 입금", "title": "신탁 - 수탁자 입금", "content": "본 매매계약은 00신탁회사의 신탁관리 물건으로, 신탁관리회사의 승낙 하에 매매하며 신탁관리 계좌(00은행,00)로 (계약, 중도, 잔)금을 입금하기로 한다."},
+            {"id": 64, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "유치권", "grade": "C", "situation": "매도인 부담", "title": "유치권 - 매도인 부담", "content": "본 물건에 인테리어 시설 등으로 유치권 주장이 있다면 매도인이 책임지고 잔금 시 정리하여 주기로 하며 정리되지 않았을 때에는 잔금에서 공제한다."},
+            {"id": 76, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "경매", "grade": "C", "situation": "매수인 책임", "title": "경매 - 매수인 책임", "content": "임차인은 위 부동산에 존재하는 선순위권리로 인하여 경매 등이 실행될 경우 임차보증금의 전부 또는 일부를 반환받지 못할 수도 있음을 확인한다."},
+            {"id": 111, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "권리관계", "grade": "C", "situation": "전입신고", "title": "권리관계 - 전입신고", "content": "임대인은 잔금일에 전입세대 열람원을 열람하여 전입세대가 없음을 임차인에게 확인시키기로 한다."},
+            {"id": 119, "contractType": "임대", "mainCategory": "담보권리", "subCategory": "채권", "grade": "C", "situation": "임대인의 대출", "title": "채권 - 임대인의 대출", "content": "근저당을 말소하고 임차인이 선순위 권리를 확보한 뒤 임대인은 금 000원을 대출 예정임.이를 임차인에게 충분히 설명하고 계약을 진행한다."},
+            {"id": 55, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "허가", "grade": "A", "situation": "특수관계(법인/외국인) 거래시 허가여부 확인", "title": "허가 - 특수관계(법인/외국인) 거래시 허가여부 확인", "content": "매수인(외국인 or 법인)이 관할 관청의 매수가능(토지거래허가)를 득하지 못할경우 본계약을 무효로 하며 지급된 계약금은 조건없이 반환하기로 한다."},
+            {"id": 62, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "신축", "grade": "A", "situation": "등기있음", "title": "신축 - 등기있음", "content": "본 물건은 현재 신축중인 건축물로서 매도자가 보존등기 후 잔금과 동시에 명의 이전하며, 선 임대차계약 및 대출금 000원 정은 잔금일 기준 매수자가 승계받기로 한다."},
+            {"id": 86, "contractType": "임대", "mainCategory": "분양신축", "subCategory": "신축", "grade": "A", "situation": "등기없음", "title": "신축 - 등기없음", "content": "임차인은 본 계약의 목적물이 신축중인 아파트임을 인지하고 사용승인일  이후 입주하기로 한다."},
+            {"id": 87, "contractType": "임대", "mainCategory": "분양신축", "subCategory": "신축", "grade": "A", "situation": "등기없음", "title": "신축 - 등기없음", "content": "본 임대차계약은 양 당사자가 분양계약서 원본 및 시행사,시공사,대출은행 확인을 하고 가사용 승인상태에서 계약 서명날인한다."},
+            {"id": 89, "contractType": "임대", "mainCategory": "분양신축", "subCategory": "신축", "grade": "A", "situation": "등기없음", "title": "신축 - 등기없음", "content": "본 임대차계약은 신규입주 주택으로 집단대출 대출금 채권최고액 00원이 있으며, 양 당사자가 합의에 의한 전세금으로 계약이며 임차인은 임대인이 등기완료 후 전입신고 하기로 한다.  임차인의 전입신고로 등기가 불가능할 때에는 주민등록을 퇴거하여 주기로 하고 이행하지 않았을 때에는 그에 소요되는 손해를 임차인이 임대인에게 배상하기로 한다."},
+            {"id": 49, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "매도인 부담", "title": "분양권 - 매도인 부담", "content": "매도인이 신청한 옵션품목은 매수자가 일괄 인수하고 매매대금과는 별도로 매도인이 납부한 금액을 지금하기로 한다."},
+            {"id": 50, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "분양권 총 거래금액 산출시", "title": "분양권 - 분양권 총 거래금액 산출시", "content": "총 매매금액은 분양가 00원 + 프리미엄 00원 + 확장비 00원 포함된 총 00원임."},
+            {"id": 51, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "분양권 거래시 매수인이 매도인에게 지급할 총 금액 산출시", "title": "분양권 - 분양권 거래시 매수인이 매도인에게 지급할 총 금액 산출시", "content": "정산지불금 = 매수인은 계약금(0%) 00원 + 확장비(0%)00원 + 프리미엄 00원 총 00원 잔금일에 지불조건임."},
+            {"id": 52, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "중도금대출", "title": "분양권 - 중도금대출", "content": "00년00월00일까지 중도금 확정이자 발생분 00원은 매도자 부담조건이며 그 이후 잔금일까지 발생하는 중도금 이자분에 대해서는 매수자 부담조건임"},
+            {"id": 53, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "중도금대출", "title": "분양권 - 중도금대출", "content": "중도금 0회 발생분 총00원에 대해서는 잔금일에 매도자 말소조건임"},
+            {"id": 54, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "분양권 거래시 인지세", "title": "분양권 - 분양권 거래시 인지세", "content": "잔금시 인지세는 매도인이 매수인에게 지불한다."},
+            {"id": 56, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "지역주택조합 분양권", "title": "분양권 - 지역주택조합 분양권", "content": "양 당사자는 본 매매금액에 동의하며 매수인은 매도인의 모든 권리와 의무, 계약사항을 그대로 승계함에 동의한다."},
+            {"id": 57, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "지역주택조합 분양권", "title": "분양권 - 지역주택조합 분양권", "content": "중도금대출금액(00원) + 이자전액(변동금리, 이자후불제)을 매수인이 승계한다."},
+            {"id": 58, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "지역주택조합 분양권", "title": "분양권 - 지역주택조합 분양권", "content": "매수인의 조합원자격여부는 매수인책임으로 하고, 부적격시에 계약금은 매도인에게 귀속된다."},
+            {"id": 59, "contractType": "매매", "mainCategory": "분양신축", "subCategory": "분양권", "grade": "B", "situation": "지역주택조합 분양권", "title": "분양권 - 지역주택조합 분양권", "content": "본 물건은 조합원아파트의 특성상 양당사자에게 토지취득세가 부과되며 매수인에게는 신탁등기비(00원)가 있다 매수인은 입주시 이익금이나 추가분담금이 발생할 수 있음과 등기시 신축취득세가 적용됨을 알고 계약한다."},
+            {"id": 88, "contractType": "임대", "mainCategory": "분양신축", "subCategory": "신축", "grade": "B", "situation": "등기없음", "title": "신축 - 등기없음", "content": "잔금지급일은 입주지정일을 기준으로 정하며, 준공일 등에 변동이 있을 경우 잔금지급일과 입주지정일은 변경될 수 있다."},
+            {"id": 90, "contractType": "임대", "mainCategory": "분양신축", "subCategory": "신축", "grade": "C", "situation": "등기없음", "title": "신축 - 등기없음", "content": "본 건물에 대한 보존등기 이전 계약이므로 토지 등기부등본만 열람하고 본 호실에 대한 등기부등본은 향후 열람하기로 한다.   본 건물은 현재 미등기 상태의 계약이며, 분양계약서 원본, 소유자 신분증을 확인하여 분양사에 확인후 진행하는 계약임"},
+            {"id": 4, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "A", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금 지급일은 매도인(임대인)과 매수인(임차인)의 상호협의하에 조정될 수 있다. 단, 00월00일 이내로 한다."},
+            {"id": 204, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "A", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금 지급일은 매도인(임대인)과 매수인(임차인)의 상호협의하에 조정될 수 있다. 단, 00월00일 이내로 한다."},
+            {"id": 112, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "A", "situation": "반려동물", "title": "조건부계약취소 - 반려동물", "content": "실내흡연 및 반려동물 사육을 금지한다. 위반시 임대인은 계약을 해지할 수 있으며, 발생하는 피해는 임차인의 부담으로 한다."},
+            {"id": 114, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "A", "situation": "제한물권", "title": "조건부계약취소 - 제한물권", "content": "잔금 다음날까지 임대인은 임차인에게 손해가 발생할 수 있는 임차목적물에 대한 일체의 제한물권 설정 등을 할 수 없으며 위반시 임차인은 계약을 취소할 수 있다."},
+            {"id": 123, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "A", "situation": "계약갱신청구권 사용", "title": "재계약 - 계약갱신청구권 사용", "content": "본 계약은 계약갱신청구권을 사용한 재계약이다."},
+            {"id": 3, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "B", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금일은 대출실행이 늦어질 경우, 대출 실행일로 변경할 수 있다. 단, 원래 잔금일에서 00일이 경과할 경우, 매도(임대)인은 매수(임차)인의 책임있는 사유로 계약을 해제 할 수 있다."},
+            {"id": 203, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "B", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금일은 대출실행이 늦어질 경우, 대출 실행일로 변경할 수 있다. 단, 원래 잔금일에서 00일이 경과할 경우, 매도(임대)인은 매수(임차)인의 책임있는 사유로 계약을 해제 할 수 있다."},
+            {"id": 6, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "B", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금일에 대출실행이 불가하거나 잔금일이 늦춰질 경우 손해배상책임은 매수인 or 임차인이 부담하기로 한다."},
+            {"id": 206, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "B", "situation": "잔금협의", "title": "일정협의 - 잔금협의", "content": "잔금일에 대출실행이 불가하거나 잔금일이 늦춰질 경우 손해배상책임은 매수인 or 임차인이 부담하기로 한다."},
+            {"id": 23, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "B", "situation": "손해배상금", "title": "조건부계약취소 - 손해배상금", "content": "본 계약서에 기재되어 있는 특약사항을 위반한 자에게 상대방은 언제든지 계약을 해제 할 수 있으며 이때 손해배상금액은 관련법규에 따른다."},
+            {"id": 223, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "B", "situation": "손해배상금", "title": "조건부계약취소 - 손해배상금", "content": "본 계약서에 기재되어 있는 특약사항을 위반한 자에게 상대방은 언제든지 계약을 해제 할 수 있으며 이때 손해배상금액은 관련법규에 따른다."},
+            {"id": 31, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "급매", "grade": "B", "situation": "기타", "title": "급매 - 기본", "content": "본 계약은 매도인의 사정으로 일반시세보다 낮은 금액으로 계약을 체결하기로 한다. 추후, 매도인은 궁박, 경솔 또는 무경험, 착오로 인하여 계약의 무효를 주장할 수 없다."},
+            {"id": 99, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "B", "situation": "보증금 반환", "title": "재계약 - 보증금 반환", "content": "임대차계약 만료일에 새 임대차 계약의 성사 여부와 관계없이 임대인은 임차보증금을 반환하여야 한다."},
+            {"id": 100, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "B", "situation": "보증금변동", "title": "재계약 - 보증금변동", "content": "기존보증금 9억원에서 4천만원을 증액하여 계약기간을 연장하는 계약이다."},
+            {"id": 101, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "B", "situation": "보증금변동", "title": "재계약 - 보증금변동", "content": "기존보증금 9억원을 계약금으로 하고 증액분 4천만원을 잔금으로 한다."},
+            {"id": 113, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "B", "situation": "고성방가금지", "title": "조건부계약취소 - 고성방가금지", "content": "임차인은 고성방가 및 이웃주민에게 피해를 끼치지 않도록 하며, 이로인한 문제가 발생시 임대인이 퇴거를 요청할 수 있다."},
+            {"id": 115, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "B", "situation": "하자", "title": "조건부계약취소 - 하자", "content": "잔금일에 본 계약목적물의 중대한 하자로 임차인이 사용 수익이 어려울 경우를 제외하고 단순 변심으로 계약을 해제 할 수 없다."},
+            {"id": 66, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "일정협의", "grade": "C", "situation": "중도금 협의", "title": "일정협의 - 중도금 협의", "content": "매수자는 중도금을 00년00월00일 지급하며 날짜 전에 지급하지 않기로 한다. 날짜 전 지급한 중도금은 무효로 한다."},
+            {"id": 69, "contractType": "매매", "mainCategory": "일정관리", "subCategory": "조건부계약취소", "grade": "C", "situation": "채무불이행", "title": "조건부계약취소 - 채무불이행", "content": "매수인의 채무불이행 시, 매수인이 매도인에게 지급한 00원은 반환하지 않으며 계약은 해제된 것으로 본다."},
+            {"id": 102, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "C", "situation": "보증금 미변동", "title": "재계약 - 보증금 미변동", "content": "임차인은 계약만기 0개월 전에 임대인에게 해지/연장 여부를 통보하며 미통보시에는 같은 조건으로 재계약된 것으로 간주한다."},
+            {"id": 103, "contractType": "임대", "mainCategory": "일정관리", "subCategory": "재계약", "grade": "C", "situation": "보증금 변동", "title": "재계약 - 보증금 변동", "content": "본 계약의 보증금은 2년간 5원으로 하고, 그 이후 5원을 증액하여 10원으로 한다."},
+            {"id": 109, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "전입신고", "grade": "A", "situation": "전입신고", "title": "전입신고 - 전입신고", "content": "임대인은 임차인의 전입신고로 등기가 불가능할 때에는 주민등록을 퇴거하여 주어야 하고 이행하지 않아 발생하는 손해는 임차인이 배상하기로 한다."},
+            {"id": 46, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "복합계약", "grade": "B", "situation": "매매 후 임대", "title": "복합계약 - 매매 후 임대", "content": "매수인은 본 매매계약의 잔금과 동시에 매도인과 전(월)세 계약을 체결한다. 임대조건은 전(월)세 보증금00원, 계약기간 2년으로 체결한다."},
+            {"id": 47, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "복합계약", "grade": "B", "situation": "매매 후 임대", "title": "복합계약 - 매매 후 임대", "content": "매수인은 본 매매계약의 잔금과 동시에 매도인과 전(월)세 계약을 체결한다.잔금10원은 잔금일에 5원을 입금하고 나머지 5원은 임대보증금으로 갈음한다."},
+            {"id": 48, "contractType": "매매", "mainCategory": "계약기본", "subCategory": "복합계약", "grade": "B", "situation": "임대 중 매매", "title": "복합계약 - 임대 중 매매", "content": "본 계약은 임차인이 현재 거주하고 있는 임대목적물을 임대인으로 부터 매매하는 계약이며, 임차인이 임대인에게 지급한 임대보증금00원은 (계약, 중도, 잔)금으로 갈음 하고, 임대보증금 반환의무는 소멸시키기로 한다."},
+            {"id": 67, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "임대차 승계", "grade": "B", "situation": "매도인 부담", "title": "임대차 승계 - 매도인 부담", "content": "매도자는 잔금 시 계약의 목적물에 현 임차인의 퇴거를 책임지기로 하고, 이행하지 않았을 때에는 손해배상금으로 00원 정을 잔금에서 제외하고 지급한다."},
+            {"id": 68, "contractType": "매매", "mainCategory": "담보권리", "subCategory": "임대차 승계", "grade": "B", "situation": "매수인 승계", "title": "임대차 승계 - 매수인 승계", "content": "본 계약은 매수인이 매도인과 임차인의 임대차 계약을 승계하기로 한다. 따라서, 매매잔금10원 중 임대보증금5원을 제외하고 5원을 지급한다."},
+            {"id": 82, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "반려동물", "grade": "B", "situation": "계약해지", "title": "반려동물 - 계약해지", "content": "애완동물 사육을 금지한다. 위반시 퇴거조치에 어떠한 민형사상 이의제기도 할 수 없다."},
+            {"id": 83, "contractType": "임대", "mainCategory": "매물상태", "subCategory": "반려동물", "grade": "B", "situation": "손해배상", "title": "반려동물 - 손해배상", "content": "애완동물 사육으로 인한 도배,바닥,각종 시설물의 훼손시 임차인은 원상복구하기로 하고 임차인은 퇴실 시 특수청소비 00원정을 부담키로 한다."},
+            {"id": 110, "contractType": "임대", "mainCategory": "계약기본", "subCategory": "전입신고", "grade": "C", "situation": "전입신고", "title": "전입신고 - 전입신고", "content": "임차인은 본 계약목적물의 문제로 전입신고가 불가능할 경우, 본계약을 위약금없이 해약할 수 있다."}
+        ];
+
+        // 대분류 정의
+        const mainCategories = {
+            "계약기본": { icon: "📋", label: "계약 기본", desc: "개인정보, 확인설명, 대리계약" },
+            "금액정산": { icon: "💵", label: "비용 관련", desc: "계약금, 위약금, 세금, 관리비" },
+            "일정관리": { icon: "⏰", label: "일정 관련", desc: "잔금협의, 조건부 계약, 재계약" },
+            "담보권리": { icon: "🏦", label: "담보·권리", desc: "채권, 신탁, 경매, 대출, 전세권" },
+            "매물상태": { icon: "🏠", label: "매물 상태", desc: "현상태, 수리, 리모델링, 원상복구" },
+            "분양신축": { icon: "🏗️", label: "분양·신축", desc: "분양권, 신축, 허가" },
+        };
+
+        // 카테고리 토글 컴포넌트
+        const CategoryToggle = ({ category, clauses, selectedIds, onToggle }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const selectedCount = clauses.filter(c => selectedIds.includes(c.id)).length;
+            const categoryInfo = mainCategories[category] || { icon: "📁", label: category, desc: "" };
+            
+            return (
+                <div className="category-group">
+                    <button className="category-header" onClick={() => setIsOpen(!isOpen)}>
+                        <div className="flex items-center">
+                            <span className={`arrow ${isOpen ? 'open' : ''}`}>▶</span>
+                            <span className="category-icon">{categoryInfo.icon}</span>
+                            <span className="category-title">{categoryInfo.label}</span>
+                            <span className="category-count">{clauses.length}개</span>
+                        </div>
+                        {selectedCount > 0 && (
+                            <span className="category-selected">{selectedCount}개 선택</span>
+                        )}
+                    </button>
+                    
+                    {isOpen && (
+                        <div className="clause-list">
+                            {clauses.map((clause) => (
+                                <div
+                                    key={clause.id}
+                                    className={`clause-item ${selectedIds.includes(clause.id) ? 'selected' : ''}`}
+                                    onClick={() => onToggle(clause.id)}
+                                >
+                                    <div className="flex items-start">
+                                        <input
+                                            type="checkbox"
+                                            className="clause-checkbox"
+                                            checked={selectedIds.includes(clause.id)}
+                                            onChange={() => {}}
+                                        />
+                                        <div className="clause-content">
+                                            <div className="clause-badges">
+                                                <span className="badge badge-gray">{clause.situation}</span>
+                                            </div>
+                                            <div className="clause-title">{clause.title}</div>
+                                            <div className="clause-text">{clause.content}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // 메인 앱
+        const App = () => {
+            const [selectedIds, setSelectedIds] = useState([]);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [activeTab, setActiveTab] = useState('매매'); // 매매, 임대
+            const [showToast, setShowToast] = useState(false);
+            const [toastMessage, setToastMessage] = useState('');
+            
+            // 탭별 데이터 필터링
+            const filteredByTab = useMemo(() => {
+                return clauseData.filter(c => c.contractType === activeTab);
+            }, [activeTab]);
+
+            // 검색 필터링
+            const filteredData = useMemo(() => {
+                const term = searchTerm.trim().toLowerCase();
+
+                // 검색어가 있으면 전체 데이터에서 검색
+                if (term) {
+                    return clauseData.filter(c =>
+                        c.title.toLowerCase().includes(term) ||
+                        c.content.toLowerCase().includes(term) ||
+                        c.situation.toLowerCase().includes(term) ||
+                        c.subCategory.toLowerCase().includes(term)
+                    );
+                }
+
+                // 검색어가 없으면 탭 필터링 적용
+                return filteredByTab;
+            }, [searchTerm, clauseData, filteredByTab]);
+            
+            // 대분류별 그룹핑
+            const groupedData = useMemo(() => {
+                const groups = {};
+                filteredData.forEach(item => {
+                    if (!groups[item.mainCategory]) {
+                        groups[item.mainCategory] = [];
+                    }
+                    groups[item.mainCategory].push(item);
+                });
+                return groups;
+            }, [filteredData]);
+            
+            // 선택된 특약
+            const selectedClauses = useMemo(() => 
+                clauseData.filter(c => selectedIds.includes(c.id)),
+                [selectedIds]
+            );
+            
+            // 탭별 개수
+            const tabCounts = useMemo(() => ({
+                '매매': clauseData.filter(c => c.contractType === '매매').length,
+                '임대': clauseData.filter(c => c.contractType === '임대').length,
+            }), []);
+            
+            const handleToggle = (id) => {
+                setSelectedIds(prev => 
+                    prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                );
+            };
+            
+            const copyToClipboard = () => {
+                const text = selectedClauses.map((c, i) => `${i + 1}. ${c.content}`).join('\n\n');
+                navigator.clipboard.writeText(text).then(() => {
+                    setToastMessage(`${selectedClauses.length}개 특약이 복사되었습니다!`);
+                    setShowToast(true);
+                    setTimeout(() => setShowToast(false), 2000);
+                });
+            };
+            
+            const clearAll = () => {
+                setSelectedIds([]);
+            };
+
+            // 대분류 순서
+            const categoryOrder = ["계약기본", "금액정산", "일정관리", "담보권리", "매물상태", "분양신축"];
+            const sortedCategories = Object.keys(groupedData).sort((a, b) => 
+                categoryOrder.indexOf(a) - categoryOrder.indexOf(b)
+            );
+            
+            return (
+                <div>
+                    {/* 헤더 */}
+                    <header className="header">
+                        <div className="container" style={{padding:'1rem'}}>
+                            <div className="flex items-center justify-between flex-wrap gap-3">
+                                <div>
+                                    <h1 style={{fontSize:'1.5rem',fontWeight:700,color:'#1f2937'}}>📋 스마트 특약 작성기</h1>
+                                    <p style={{fontSize:'0.875rem',color:'#6b7280',marginTop:'0.25rem'}}>필요한 특약을 선택하고 한 번에 복사하세요</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        style={{
+                                            background:'#10b981',
+                                            color:'white',
+                                            padding:'0.5rem 1rem',
+                                            borderRadius:'9999px',
+                                            fontWeight:600,
+                                            border:'none',
+                                            cursor:'pointer',
+                                            fontSize:'0.875rem',
+                                            transition:'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.background = '#059669'}
+                                        onMouseLeave={(e) => e.target.style.background = '#10b981'}
+                                        onClick={() => window.open('https://forms.gle/u9FrXmxt8bff4qnX8', '_blank')}
+                                    >
+                                        ➕ 특약 추가 요청
+                                    </button>
+                                    <button
+                                        style={{
+                                            background:'#6366f1',
+                                            color:'white',
+                                            padding:'0.5rem 1rem',
+                                            borderRadius:'9999px',
+                                            fontWeight:600,
+                                            border:'none',
+                                            cursor:'pointer',
+                                            fontSize:'0.875rem',
+                                            transition:'all 0.2s'
+                                        }}
+                                        onMouseEnter={(e) => e.target.style.background = '#4f46e5'}
+                                        onMouseLeave={(e) => e.target.style.background = '#6366f1'}
+                                        onClick={() => window.open('https://open.kakao.com/o/suLtTcYh', '_blank')}
+                                    >
+                                        💬 오류제보 및 문의
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {/* 검색 */}
+                            <div className="search-box">
+                                <span className="search-icon">🔍</span>
+                                <input
+                                    type="text"
+                                    className="search-input"
+                                    placeholder="특약 검색 (예: 잔금, 인테리어, 대출...)"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                    <button className="search-clear" onClick={() => setSearchTerm('')}>✕</button>
+                                )}
+                            </div>
+                        </div>
+                        
+                        {/* 탭 */}
+                        <div className="tab-container">
+                            <div className="container flex gap-2">
+                                <button
+                                    className={`tab-btn ${activeTab === '매매' ? 'active-sale' : ''}`}
+                                    onClick={() => setActiveTab('매매')}
+                                >
+                                    🏠 매매
+                                    <span className="count">{tabCounts['매매']}</span>
+                                </button>
+                                <button
+                                    className={`tab-btn ${activeTab === '임대' ? 'active-rent' : ''}`}
+                                    onClick={() => setActiveTab('임대')}
+                                >
+                                    🔑 임대
+                                    <span className="count">{tabCounts['임대']}</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+                    
+                    {/* 메인 */}
+                    <div className="container">
+                        <div className="main-grid">
+                            {/* 왼쪽: 특약 목록 */}
+                            <div>
+                                {sortedCategories.length > 0 ? (
+                                    sortedCategories.map(category => (
+                                        <CategoryToggle
+                                            key={category}
+                                            category={category}
+                                            clauses={groupedData[category]}
+                                            selectedIds={selectedIds}
+                                            onToggle={handleToggle}
+                                        />
+                                    ))
+                                ) : (
+                                    <div className="empty-state">
+                                        <div className="empty-state-icon">🔍</div>
+                                        <p>"{searchTerm}"에 대한 검색 결과가 없습니다</p>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* 오른쪽: 선택된 특약 */}
+                            <div>
+                                <div className="card selected-panel">
+                                    <div className="flex items-center justify-between" style={{marginBottom:'1rem'}}>
+                                        <h2 style={{fontSize:'1.125rem',fontWeight:700,color:'#1f2937'}}>
+                                            ✅ 선택한 특약 ({selectedClauses.length}개)
+                                        </h2>
+                                        {selectedClauses.length > 0 && (
+                                            <button onClick={clearAll} style={{fontSize:'0.875rem',color:'#6b7280',cursor:'pointer',background:'none',border:'none'}}>
+                                                전체 삭제
+                                            </button>
+                                        )}
+                                    </div>
+                                    
+                                    {selectedClauses.length === 0 ? (
+                                        <div className="empty-state">
+                                            <div className="empty-state-icon">📝</div>
+                                            <p>왼쪽에서 특약을 선택해주세요</p>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="selected-list">
+                                                {selectedClauses.map((clause, index) => (
+                                                    <div key={clause.id} className="selected-item">
+                                                        <button className="delete-btn" onClick={() => handleToggle(clause.id)}>✕</button>
+                                                        <div className="flex items-start">
+                                                            <span className="selected-num">{index + 1}</span>
+                                                            <div>
+                                                                <div style={{fontSize:'0.75rem',color:'#6b7280',marginBottom:'0.25rem'}}>
+                                                                    {clause.subCategory}
+                                                                </div>
+                                                                <div className="selected-text">{clause.content}</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            
+                                            <button className="copy-btn" onClick={copyToClipboard}>
+                                                📋 전체 복사하기
+                                            </button>
+                                            
+                                            <div className="preview-box">
+                                                <p style={{fontSize:'0.75rem',color:'#6b7280',marginBottom:'0.5rem',fontWeight:500}}>
+                                                    📄 복사될 내용 미리보기
+                                                </p>
+                                                <div className="preview-content">
+                                                    {selectedClauses.map((c, i) => `${i + 1}. ${c.content}`).join('\n\n')}
+                                                </div>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* 토스트 */}
+                    {showToast && (
+                        <div className="toast">
+                            <span style={{color:'#4ade80'}}>✓</span>
+                            {toastMessage}
+                        </div>
+                    )}
+                    
+                    {/* 푸터 */}
+                    <footer className="footer">
+                        <p>© 2025 스마트 특약 작성기 | 부동산 계약서 작성을 더 쉽게</p>
+                        <p className="footer-sub">본 특약은 참고용이며, 중요한 계약은 법률 전문가 검토를 권장합니다.</p>
+                    </footer>
+                </div>
+            );
+        };
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python:*)",
+      "Bash(del convert_data.py migrate_categories.py)",
+      "Bash(git mv:*)",
+      "Bash(move \"특약_자동생성기_최종.html\" \"index.html\")",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
