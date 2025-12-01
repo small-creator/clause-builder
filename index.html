@@ -378,6 +378,80 @@
         }
         .empty-state-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
         
+        /* CTA Banner */
+        .cta-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 1rem;
+            padding: 1.5rem 2rem;
+            margin: 2rem 0 2rem 0;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        .cta-banner-content {
+            position: relative;
+            z-index: 1;
+        }
+        .cta-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .cta-title {
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+        .cta-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .cta-button {
+            background: white;
+            color: #667eea;
+            padding: 0.75rem 2rem;
+            border-radius: 9999px;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            background: #f0f0f0;
+        }
+        .cta-button:active {
+            transform: translateY(0);
+        }
+
         /* Footer */
         .footer {
             background: white;
@@ -876,7 +950,25 @@
                             {toastMessage}
                         </div>
                     )}
-                    
+
+                    {/* CTA 배너 */}
+                    <div className="container">
+                        <div className="cta-banner">
+                            <div className="cta-banner-content">
+                                <div className="cta-icon">🎬</div>
+                                <h2 className="cta-title">중개업 자동화에 관심있으신가요?</h2>
+                                <p className="cta-subtitle">업무 효율을 높이는 자동화 노하우를 유튜브에서 만나보세요</p>
+                                <button
+                                    className="cta-button"
+                                    onClick={() => window.open('https://www.youtube.com/@%EC%BD%94%EB%94%A9%EB%AA%BB%ED%95%98%EB%8A%94%EC%A4%91%EA%B0%9C%EC%82%AC', '_blank')}
+                                >
+                                    <span>▶️</span>
+                                    중개업 자동화 시작하기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* 푸터 */}
                     <footer className="footer">
                         <p>© 2025 스마트 특약 작성기 | 부동산 계약서 작성을 더 쉽게</p>
